@@ -11,7 +11,8 @@ import { SignalingService } from '../services/signaling.service';
 
 @Component({
   selector: 'app-video-call',
-  templateUrl: './video-call.component.html'
+  templateUrl: './video-call.component.html',
+  styleUrls: ['./video-call.component.css']
 })
 export class VideoCallComponent implements AfterViewInit, OnDestroy {
 

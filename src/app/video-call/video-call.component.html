@@ -1,27 +1,29 @@
-<div style="display:flex; gap:20px">
-  <video #localVideo autoplay playsinline muted width="400"></video>
-  <video #remoteVideo autoplay playsinline width="400"></video>
+<div class="call-container">
+  <!-- Videos -->
+  <div class="video-section">
+    <div class="video-card">
+      <video #localVideo autoplay playsinline muted></video>
+      <div class="video-label">You</div>
+    </div>
+    <div class="video-card">
+      <video #remoteVideo autoplay playsinline></video>
+      <div class="video-label">Remote</div>
+    </div>
+  </div>
+
+  <!-- Timer Info -->
+  <div class="info-section">
+    <div class="timer">
+      <div>📞 Call Time: <b>{{ callTime }}</b></div>
+      <div>🎥 Recording Time: <b>{{ recordTime }}</b></div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="button-section">
+      <button class="primary-btn" (click)="startCall()" [disabled]="callStarted">Start Call</button>
+      <button class="secondary-btn" (click)="endCall()" [disabled]="!callStarted">End Call</button>
+      <button class="primary-btn" (click)="startRecording()" [disabled]="!callStarted || isRecording">Start Recording</button>
+      <button class="secondary-btn" (click)="stopRecording()" [disabled]="!isRecording">Stop Recording</button>
+    </div>
+  </div>
 </div>
-
-<br />
-
-<div style="font-size:18px; margin:10px 0">
-  📞 Call Time: <b>{{ callTime }}</b><br />
-  🎥 Recording Time: <b>{{ recordTime }}</b>
-</div>
-
-<button (click)="startCall()" [disabled]="callStarted">
-  Start Call
-</button>
-
-<button (click)="endCall()" [disabled]="!callStarted">
-  End Call
-</button>
-
-<button (click)="startRecording()" [disabled]="!canRecord || isRecording">
-  Start Recording
-</button>
-
-<button (click)="stopRecording()" [disabled]="!isRecording">
-  Stop Recording
-</button>
