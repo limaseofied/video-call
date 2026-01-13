@@ -1,0 +1,35 @@
+<div class="auth-container">
+  <h2>Register</h2>
+
+  <form [formGroup]="registerForm" (ngSubmit)="register()">
+    <input type="text" formControlName="name" placeholder="Full Name" />
+    <div *ngIf="f['name'].touched && f['name'].invalid" class="error-msg">
+      <small *ngIf="f['name'].errors?.['required']">Name is required</small>
+    </div>
+
+
+    <input type="email" formControlName="email" placeholder="Email" />
+    <div *ngIf="f['email'].touched && f['email'].invalid" class="error-msg">
+      <small *ngIf="f['email'].errors?.['required']">Email is required</small>
+      <small *ngIf="f['email'].errors?.['email']">Invalid email address</small>
+    </div>
+
+    <input type="password" formControlName="password" placeholder="Password" />
+    <div *ngIf="f['password'].touched && f['password'].invalid" class="error-msg">
+      <small *ngIf="f['password'].errors?.['required']">Password is required</small>
+      <small *ngIf="f['password'].errors?.['minlength']">Password must be at least 6 characters</small>
+    </div>
+
+    <input type="password" formControlName="password_confirmation" placeholder="Confirm Password" />
+    <div *ngIf="f['password_confirmation'].touched && f['password_confirmation'].invalid" class="error-msg">
+      <small *ngIf="f['password_confirmation'].errors?.['required']">Confirmation is required</small>
+    </div>
+
+    <button type="submit">Register</button>
+  </form>
+
+  <p class="error" *ngIf="error">{{ error }}</p>
+  <p class="success" *ngIf="success">{{ success }}</p>
+
+  <p>Already have an account? <a routerLink="/login">Login</a></p>
+</div>
