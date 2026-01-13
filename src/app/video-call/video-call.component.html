@@ -1,0 +1,10 @@
+<div style="display:flex; gap:20px">
+  <video #localVideo autoplay playsinline muted width="400"></video>
+  <video #remoteVideo autoplay playsinline width="400"></video>
+</div>
+
+<br>
+
+<button (click)="startCall()">Start Call</button>
+<button (click)="startRecording()">Start Recording</button>
+<button (click)="stopRecording()">Stop Recording</button>
