@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { VideoCallComponent } from './video-call/video-call.component';
+import { SubscriptionCallComponent } from './subscription-call/subscription-call.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    VideoCallComponent
+    VideoCallComponent,
+    SubscriptionCallComponent
   ],
   imports: [
     BrowserModule,

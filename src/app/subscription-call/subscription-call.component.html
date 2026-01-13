@@ -1,0 +1,14 @@
+<div style="display:flex; gap:20px; margin-bottom: 10px;">
+  <video #localVideo autoplay playsinline muted width="400"></video>
+  <video #remoteVideo autoplay playsinline width="400"></video>
+</div>
+
+<div style="font-size:18px; margin:10px 0">
+  📞 Call Time: <b>{{ callTime }}</b><br>
+  🕒 Total Call Time: <b>{{ totalCallTime }}</b>
+</div>
+
+<button (click)="startCall()" [disabled]="callStarted">Start Call</button>
+<button (click)="endCall()" [disabled]="!callStarted">End Call</button>
+<button (click)="startRecording()" [disabled]="!callStarted || isRecording">Start Recording</button>
+<button (click)="stopRecording()" [disabled]="!isRecording">Stop Recording</button>

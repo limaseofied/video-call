@@ -12,8 +12,6 @@ export class WebrtcService {
     });
 
     video.srcObject = this.localStream;
-    video.muted = true;
-    await video.play();
   }
 
   createPeer() {
@@ -24,5 +22,10 @@ export class WebrtcService {
     this.localStream.getTracks().forEach(track =>
       this.peer.addTrack(track, this.localStream)
     );
+  }
+
+  close() {
+    this.peer?.close();
+    this.localStream?.getTracks().forEach(t => t.stop());
   }
 }

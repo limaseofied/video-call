@@ -19,11 +19,28 @@ export class VideoCallComponent implements AfterViewInit, OnDestroy {
   @ViewChild('remoteVideo') remoteVideo!: ElementRef<HTMLVideoElement>;
 
   roomId!: string;
+
   isCaller = false;
   callStarted = false;
+  canRecord = false;
+  isRecording = false;
 
+  // Timers
+  callTime = '00:00';
+  recordTime = '00:00';
+  private callSeconds = 0;
+  private recordSeconds = 0;
+  private callTimer!: any;
+  private recordTimer!: any;
+
+  // Recording
   mediaRecorder!: MediaRecorder;
   recordedChunks: Blob[] = [];
+  canvas!: HTMLCanvasElement;
+  ctx!: CanvasRenderingContext2D;
+ private drawInterval: any;
+
+
   pendingIce: RTCIceCandidateInit[] = [];
 
   constructor(
@@ -46,6 +63,7 @@ export class VideoCallComponent implements AfterViewInit, OnDestroy {
 
     this.rtc.peer.ontrack = e => {
       this.remoteVideo.nativeElement.srcObject = e.streams[0];
+      this.canRecord = true;
     };
 
     this.signaling.connect(this.roomId);
@@ -59,12 +77,14 @@ export class VideoCallComponent implements AfterViewInit, OnDestroy {
 
         this.signaling.send({ type: 'answer', answer });
         this.flushIce();
+        this.startCallTimer();
         this.callStarted = true;
       }
 
       if (msg.type === 'answer' && this.isCaller) {
         await this.rtc.peer.setRemoteDescription(msg.answer);
         this.flushIce();
+        this.startCallTimer();
         this.callStarted = true;
       }
 
@@ -75,58 +95,120 @@ export class VideoCallComponent implements AfterViewInit, OnDestroy {
           this.pendingIce.push(msg.candidate);
         }
       }
+
+      if (msg.type === 'end-call') {
+        this.endCall(false);
+      }
     });
   }
 
   async startCall() {
-    if (this.callStarted) return;
-
     this.isCaller = true;
+
     const offer = await this.rtc.peer.createOffer();
     await this.rtc.peer.setLocalDescription(offer);
-
     this.signaling.send({ type: 'offer', offer });
+
+    this.startCallTimer();
+    this.callStarted = true;
   }
 
+  endCall(sendSignal = true) {
+    if (this.isRecording) this.stopRecording();
+
+    if (sendSignal) {
+      this.signaling.send({ type: 'end-call' });
+    }
+
+    this.stopCallTimer();
+    this.stopRecordTimer();
+
+    this.rtc.close();
+    this.signaling.close();
+
+    this.localVideo.nativeElement.srcObject = null;
+    this.remoteVideo.nativeElement.srcObject = null;
+
+    this.callStarted = false;
+    this.canRecord = false;
+    this.isCaller = false;
+    this.callSeconds = 0;
+    this.recordSeconds = 0;
+    this.callTime = '00:00';
+    this.recordTime = '00:00';
+
+    console.log('📴 Call ended');
+  }
+
+  // ⏱ Timers
+  startCallTimer() {
+    if (this.callTimer) return;
+    this.callTimer = setInterval(() => {
+      this.callSeconds++;
+      this.callTime = this.formatTime(this.callSeconds);
+    }, 1000);
+  }
+
+  stopCallTimer() {
+    clearInterval(this.callTimer);
+    this.callTimer = null;
+  }
+
+  startRecordTimer() {
+    this.recordTimer = setInterval(() => {
+      this.recordSeconds++;
+      this.recordTime = this.formatTime(this.recordSeconds);
+    }, 1000);
+  }
+
+  stopRecordTimer() {
+    clearInterval(this.recordTimer);
+    this.recordTimer = null;
+  }
+
+  // 🎥 Recording
   startRecording() {
-    const localStream = this.rtc.localStream;
-    const remoteStream = this.remoteVideo.nativeElement.srcObject as MediaStream;
+    this.isRecording = true;
+    this.recordSeconds = 0;
+    this.startRecordTimer();
 
-    const combinedStream = new MediaStream([
-      ...localStream.getTracks(),
-      ...remoteStream.getTracks()
-    ]);
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = 800;
+    this.canvas.height = 400;
+    this.ctx = this.canvas.getContext('2d')!;
 
-    this.mediaRecorder = new MediaRecorder(combinedStream, {
-      mimeType: 'video/webm; codecs=vp8,opus'
-    });
+    this.drawInterval = window.setInterval(() => {
+      this.ctx.drawImage(this.localVideo.nativeElement, 0, 0, 400, 400);
+      this.ctx.drawImage(this.remoteVideo.nativeElement, 400, 0, 400, 400);
+    }, 33) as unknown as number;
 
-    this.mediaRecorder.ondataavailable = e => {
-      if (e.data.size > 0) this.recordedChunks.push(e.data);
-    };
 
+    const stream = this.canvas.captureStream(30);
+    const audio = this.rtc.localStream.getAudioTracks()[0];
+    if (audio) stream.addTrack(audio);
+
+    this.mediaRecorder = new MediaRecorder(stream);
+    this.mediaRecorder.ondataavailable = e => this.recordedChunks.push(e.data);
     this.mediaRecorder.onstop = () => {
+      clearInterval(this.drawInterval);
+      this.stopRecordTimer();
+
       const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
       const url = URL.createObjectURL(blob);
-
       const a = document.createElement('a');
       a.href = url;
-      a.download = `video-call-${Date.now()}.webm`;
+      a.download = `call-${Date.now()}.webm`;
       a.click();
 
-      URL.revokeObjectURL(url);
       this.recordedChunks = [];
+      this.isRecording = false;
     };
 
     this.mediaRecorder.start();
-    console.log('🎥 Recording started');
   }
 
   stopRecording() {
-    if (this.mediaRecorder?.state !== 'inactive') {
-      this.mediaRecorder.stop();
-      console.log('🛑 Recording stopped');
-    }
+    this.mediaRecorder?.stop();
   }
 
   async flushIce() {
@@ -136,8 +218,13 @@ export class VideoCallComponent implements AfterViewInit, OnDestroy {
     this.pendingIce = [];
   }
 
+  formatTime(sec: number) {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
   ngOnDestroy() {
-    this.rtc.peer?.close();
-    this.rtc.localStream?.getTracks().forEach(t => t.stop());
+    this.endCall(false);
   }
 }

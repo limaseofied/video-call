@@ -2,33 +2,25 @@ import { Injectable } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class SignalingService {
-  private ws!: WebSocket;
-  private handler!: (msg: any) => void;
-  private queue: any[] = [];
+  private socket!: WebSocket;
 
   connect(roomId: string) {
-    this.ws = new WebSocket('ws://localhost:3000');
+    this.socket = new WebSocket('ws://localhost:3000');
 
-    this.ws.onopen = () => {
+    this.socket.onopen = () => {
       this.send({ type: 'join', roomId });
-      this.queue.forEach(m => this.ws.send(JSON.stringify(m)));
-      this.queue = [];
-    };
-
-    this.ws.onmessage = e => {
-      this.handler?.(JSON.parse(e.data));
     };
   }
 
-  send(msg: any) {
-    if (this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(msg));
-    } else {
-      this.queue.push(msg);
-    }
+  send(data: any) {
+    this.socket?.send(JSON.stringify(data));
   }
 
-  onMessage(fn: (msg: any) => void) {
-    this.handler = fn;
+  onMessage(cb: (msg: any) => void) {
+    this.socket.onmessage = e => cb(JSON.parse(e.data));
+  }
+
+  close() {
+    this.socket?.close();
   }
 }

@@ -3,8 +3,25 @@
   <video #remoteVideo autoplay playsinline width="400"></video>
 </div>
 
-<br>
+<br />
 
-<button (click)="startCall()">Start Call</button>
-<button (click)="startRecording()">Start Recording</button>
-<button (click)="stopRecording()">Stop Recording</button>
+<div style="font-size:18px; margin:10px 0">
+  📞 Call Time: <b>{{ callTime }}</b><br />
+  🎥 Recording Time: <b>{{ recordTime }}</b>
+</div>
+
+<button (click)="startCall()" [disabled]="callStarted">
+  Start Call
+</button>
+
+<button (click)="endCall()" [disabled]="!callStarted">
+  End Call
+</button>
+
+<button (click)="startRecording()" [disabled]="!canRecord || isRecording">
+  Start Recording
+</button>
+
+<button (click)="stopRecording()" [disabled]="!isRecording">
+  Stop Recording
+</button>
